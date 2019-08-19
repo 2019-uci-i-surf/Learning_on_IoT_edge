@@ -22,6 +22,8 @@ class Server:
             print('successfully connected', addr[0], ':', addr[1])
             ci = ClientInstance(self.mobile_net_test, conn)
             self.ci_list.append(ci)
+
+        for ci in self.ci_list:
             conn_thread = Thread(target=ci.main_task)
             conn_thread.start()
             thread_list.append(conn_thread)

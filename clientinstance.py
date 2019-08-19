@@ -16,6 +16,7 @@ class ClientInstance:
     def recv_data(self):
         if not self.conn:
             raise Exception("Connection is not established")
+        self.conn.sendall(b'ready')
         msg_body = None
         body_size = None
         while True:

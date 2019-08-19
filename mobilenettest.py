@@ -3,8 +3,6 @@ import cv2
 from keras.applications.imagenet_utils import preprocess_input
 from keras.preprocessing import image
 import numpy as np
-from threading import Timer
-import time
 from model.ssd300MobileNet import SSD
 from model.utils.ssd_utils import BBoxUtility
 import matplotlib.pyplot as plt
