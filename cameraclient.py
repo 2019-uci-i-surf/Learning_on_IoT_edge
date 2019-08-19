@@ -23,9 +23,6 @@ class CameraClient:
         start = time.time()
         vidcap = cv2.VideoCapture(video_path)
         count = 0
-        while True:
-            if(time.strftime('%S', time.localtime(time.time())) == '00'):
-                break
         print('\nData Transmission Start Time :', time.strftime('%Y-%m-%d-%X', time.localtime(time.time())))
         while True:
             success, image = vidcap.read()

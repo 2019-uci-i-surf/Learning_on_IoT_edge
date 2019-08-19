@@ -59,11 +59,12 @@ class ClientInstance:
         self.server_flag = True
 
     def run_test(self):
-        while not self.server_flag:
-            continue
+        # while not self.server_flag:
+        #     continue
 
         while True:
             frame = self.frame_queue.get()
+            print(frame)
             if frame is 0:
                 return
             self.MBNet.run(frame)
@@ -71,4 +72,5 @@ class ClientInstance:
     def main_task(self):
         recv_thread = Thread(target=self.recv_data())
         recv_thread.start()
+        self.run_test()
         recv_thread.join()
