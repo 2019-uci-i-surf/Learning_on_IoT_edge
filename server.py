@@ -12,7 +12,7 @@ class Server:
         self.mobile_net_test = MobileNetTest(CLASS_NAMES, WEIGHT_PATH, INPUT_SHAPE)
         self.ci_list = []
 
-    def network_thread(self): # connect client
+    def run_task(self): # connect client
         self.socket.listen(1)
         print('Ready to accept client')
 
@@ -28,11 +28,6 @@ class Server:
 
         for conn_thread in thread_list:
             conn_thread.join()
-
-    def run_task(self):
-        network_thread = Thread(target=self.network_thread)
-        network_thread.start()
-        network_thread.join()
 
 
 if __name__ == '__main__':

@@ -64,13 +64,14 @@ class ClientInstance:
 
         while True:
             frame = self.frame_queue.get()
-            print(frame)
             if frame is 0:
                 return
             self.MBNet.run(frame)
 
     def main_task(self):
-        recv_thread = Thread(target=self.recv_data())
+        recv_thread = Thread(target=self.recv_data)
         recv_thread.start()
-        self.run_test()
+        test_thread = Thread(target=self.run_test)
+        test_thread.start()
         recv_thread.join()
+        test_thread.join()

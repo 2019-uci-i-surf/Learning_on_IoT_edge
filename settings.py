@@ -1,7 +1,7 @@
 SERVER_HOST = '169.234.3.32'
 SERVER_PORT = 10001
 
-INPUT_SHAPE = (640, 360, 3)
+INPUT_SHAPE = (300, 300, 3)
 WEIGHT_PATH = r'model/mobilenetssd300.hdf5'
 CLASS_NAMES = ["background", "aeroplane", "bicycle", "bird", "boat", "bottle", "bus", "car", "cat", "chair", "cow",
                "diningtable", "dog", "horse", "motorbike", "person", "pottedplant", "sheep", "sofa", "train",

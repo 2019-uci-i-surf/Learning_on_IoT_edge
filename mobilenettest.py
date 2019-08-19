@@ -38,6 +38,7 @@ class MobileNetTest(object):
         self.input_shape = input_shape
         self.model = SSD(self.input_shape, num_classes=self.num_classes)
         self.model.load_weights(weight_path)
+        self.model._make_predict_function()
         self.bbox_util = BBoxUtility(self.num_classes)
         #self.timer = Timer(1, self.timer_callback)
         #self.current_time = 0
@@ -65,7 +66,6 @@ class MobileNetTest(object):
             self.class_colors.append(col)
 
     def run(self, frame, conf_thresh=0.6):
-
         """ Runs the test on a video (or webcam)
 
         # Arguments
@@ -73,37 +73,11 @@ class MobileNetTest(object):
                      are not visualized.
 
         """
-        #self.timer.start()
         output_list = list()
-        #orig_image = image_queue.get()
-        orig_image = frame
-        #self.exec_time = time.time()
-
-            #self.timer.cancel()
-            #self.timer.join()
-            # #self.exec_time = None
-            #avg_fps, total_time = self.calc_avg_fps(self.fps_time_slot)
-            #print("\nAverage fps : {}".format(avg_fps))
-            #print("Computation delay(Preprocess+MobileNet+SSD) : {}".format(self.current_time), 'sec')
-            # self.draw_fps(self.fps_time_slot)
-            #
-            # #print("Number of hit_detection :", hit_detection)
-            # #print("Number of total_detection :", len(output_list))
-            # #print("Accuracy :", (hit_detection / len(output_list))*100, "%")
-            #
-
-            # total_fps = self.current_fps
-            # print(self.fps_time_slot)
-
-        orig_image = cv2.cvtColor(orig_image, cv2.COLOR_BGR2RGB)
-        to_draw = orig_image
-
-        """
-        Reshape to original aspect ratio for later visualization
-        The resized version is used, to visualize what kind of resolution
-        the network has to work with.
-        to_draw = cv2.resize(resized, (int(self.input_shape[0] * vidar), self.input_shape[1]))
-        """
+        im_size = (self.input_shape[0], self.input_shape[1])
+        resized = cv2.resize(frame, im_size)
+        orig_image = cv2.cvtColor(resized, cv2.COLOR_RGB2BGR)
+        to_draw = resized
 
         # Use model to predict
         inputs = [image.img_to_array(orig_image)]
