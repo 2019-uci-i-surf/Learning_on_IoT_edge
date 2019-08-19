@@ -13,6 +13,7 @@ class ClientInstance:
         self.conn = conn
         self.MBNet = MBNet
         self.communication_delay = None
+        self.computation_delay = None
 
     def recv_data(self):
         if not self.conn:
@@ -37,14 +38,16 @@ class ClientInstance:
                     if len(msg_body) != body_size:
                         return
                     image = numpy.load(BytesIO(msg_body))['frame']
+
                     # measure communication delay
                     if self.communication_delay is None:
                         self.communication_delay = time.time() - start_time
+
                     if self.frame_queue.qsize() <= TCP_QUEUE_SIZE:
                         self.frame_queue.put(image)
 
                 split_msg = data[header_idx:].split(b':')
-                if len(split_msg) < 3:  # 잘 못된 데이터가 들어왔을 때
+                if len(split_msg) < 3:  # 잘못된 데이터가 들어왔을 때
                     continue
                 body_size = int(split_msg[1].decode())
                 msg_body = split_msg[2]
@@ -58,12 +61,20 @@ class ClientInstance:
         pass
 
     def run_test(self):
+        while self.frame_queue.empty():
+            continue
+
+        start_time = time.time
         while True:
             frame = self.frame_queue.get()
             if frame is 0:
                 self.return_procedure()
                 return
             self.MBNet.run(frame)
+
+            # measure computation delay
+            if self.communication_delay is None:
+                self.communication_delay = time.time() - start_time
 
     def return_procedure(self):
         print("communication delay: %.4f" %(self.communication_delay))
