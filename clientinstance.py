@@ -66,7 +66,7 @@ class ClientInstance:
             self.MBNet.run(frame)
 
     def return_procedure(self):
-        print(self.communication_delay)
+        print("communication delay: %.4f" %(self.communication_delay))
 
     def main_task(self):
         recv_thread = Thread(target=self.recv_data)
