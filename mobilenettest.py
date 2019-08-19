@@ -39,16 +39,16 @@ class MobileNetTest(object):
         self.model = SSD(self.input_shape, num_classes=self.num_classes)
         self.model.load_weights(weight_path)
         self.bbox_util = BBoxUtility(self.num_classes)
-        self.timer = Timer(1, self.timer_callback)
-        self.current_time = 0
-        self.current_fps = 0
-        self.exec_time = None
-        self.prev_extra_time = None
-        self.extra_time = None
-        self.fps_time_slot = list()
-        self.is_finish = False
-        self.fps_start = False
-        self.fps_start_time = 0
+        #self.timer = Timer(1, self.timer_callback)
+        #self.current_time = 0
+        # self.current_fps = 0
+        #self.exec_time = None
+        #self.prev_extra_time = None
+        #self.extra_time = None
+        # self.fps_time_slot = list()
+        #self.is_finish = False
+        #self.fps_start = False
+        #self.fps_start_time = 0
 
         # Create unique and somewhat visually distinguishable bright
         # colors for the different classes.
@@ -64,7 +64,7 @@ class MobileNetTest(object):
             col = (int(cvcol[0][0][0]), int(cvcol[0][0][1]), int(cvcol[0][0][2]))
             self.class_colors.append(col)
 
-    def run(self, image_queue,  conf_thresh=0.6):
+    def run(self, frame, conf_thresh=0.6):
 
         """ Runs the test on a video (or webcam)
 
@@ -73,96 +73,106 @@ class MobileNetTest(object):
                      are not visualized.
 
         """
-        self.timer.start()
+        #self.timer.start()
         output_list = list()
-        while True:
-            orig_image = image_queue.get()
-            self.exec_time = time.time()
-            if orig_image is 0:
-                self.timer.cancel()
-                self.timer.join()
-                self.exec_time = None
-                avg_fps, total_time = self.calc_avg_fps(self.fps_time_slot)
-                print("\nAverage fps : {}".format(avg_fps))
-                print("Computation delay(Preprocess+MobileNet+SSD) : {}".format(self.current_time), 'sec')
-                self.draw_fps(self.fps_time_slot)
-                #print(output_list)
+        #orig_image = image_queue.get()
+        orig_image = frame
+        #self.exec_time = time.time()
 
-                hit_detection = 0
-                for i in DETECTION_LIST:
-                    hit_detection += output_list.count(i)
-                #print("Number of hit_detection :", hit_detection)
-                #print("Number of total_detection :", len(output_list))
-                print("Accuracy :", (hit_detection / len(output_list))*100, "%")
+            #self.timer.cancel()
+            #self.timer.join()
+            # #self.exec_time = None
+            #avg_fps, total_time = self.calc_avg_fps(self.fps_time_slot)
+            #print("\nAverage fps : {}".format(avg_fps))
+            #print("Computation delay(Preprocess+MobileNet+SSD) : {}".format(self.current_time), 'sec')
+            # self.draw_fps(self.fps_time_slot)
+            #
+            # #print("Number of hit_detection :", hit_detection)
+            # #print("Number of total_detection :", len(output_list))
+            # #print("Accuracy :", (hit_detection / len(output_list))*100, "%")
+            #
 
-                #print(self.fps_time_slot)
-                return
+            # total_fps = self.current_fps
+            # print(self.fps_time_slot)
 
-            orig_image = cv2.cvtColor(orig_image, cv2.COLOR_BGR2RGB)
-            to_draw = orig_image
-            # Reshape to original aspect ratio for later visualization
-            # The resized version is used, to visualize what kind of resolution
-            # the network has to work with.
-            # to_draw = cv2.resize(resized, (int(self.input_shape[0] * vidar), self.input_shape[1]))
+        orig_image = cv2.cvtColor(orig_image, cv2.COLOR_BGR2RGB)
+        to_draw = orig_image
 
-            # Use model to predict
-            inputs = [image.img_to_array(orig_image)]
-            tmp_inp = np.array(inputs)
-            x = preprocess_input(tmp_inp)
+        """
+        Reshape to original aspect ratio for later visualization
+        The resized version is used, to visualize what kind of resolution
+        the network has to work with.
+        to_draw = cv2.resize(resized, (int(self.input_shape[0] * vidar), self.input_shape[1]))
+        """
 
-            y = self.model.predict(x)
+        # Use model to predict
+        inputs = [image.img_to_array(orig_image)]
+        tmp_inp = np.array(inputs)
+        x = preprocess_input(tmp_inp)
+        y = self.model.predict(x)
+        results = self.bbox_util.detection_out(y)
 
-            # This line creates a new TensorFlow device every time. Is there a
-            # way to avoid that?
-            results = self.bbox_util.detection_out(y)
+        if len(results) > 0 and len(results[0]) > 0:
+            # Interpret output, only one frame is used
+            det_label = results[0][:, 0]
+            det_conf = results[0][:, 1]
+            det_xmin = results[0][:, 2]
+            det_ymin = results[0][:, 3]
+            det_xmax = results[0][:, 4]
+            det_ymax = results[0][:, 5]
 
-            if len(results) > 0 and len(results[0]) > 0:
-                # Interpret output, only one frame is used
-                det_label = results[0][:, 0]
-                det_conf = results[0][:, 1]
-                det_xmin = results[0][:, 2]
-                det_ymin = results[0][:, 3]
-                det_xmax = results[0][:, 4]
-                det_ymax = results[0][:, 5]
+            top_indices = [i for i, conf in enumerate(det_conf) if conf >= conf_thresh]
 
-                top_indices = [i for i, conf in enumerate(det_conf) if conf >= conf_thresh]
+            top_conf = det_conf[top_indices]
+            top_label_indices = det_label[top_indices].tolist()
+            top_xmin = det_xmin[top_indices]
+            top_ymin = det_ymin[top_indices]
+            top_xmax = det_xmax[top_indices]
+            top_ymax = det_ymax[top_indices]
 
-                top_conf = det_conf[top_indices]
-                top_label_indices = det_label[top_indices].tolist()
-                top_xmin = det_xmin[top_indices]
-                top_ymin = det_ymin[top_indices]
-                top_xmax = det_xmax[top_indices]
-                top_ymax = det_ymax[top_indices]
+            for i in range(top_conf.shape[0]):
+                if (top_conf[i] < 0.9):
+                    continue
+                xmin = int(round(top_xmin[i] * to_draw.shape[1]))
+                ymin = int(round(top_ymin[i] * to_draw.shape[0]))
+                xmax = int(round(top_xmax[i] * to_draw.shape[1]))
+                ymax = int(round(top_ymax[i] * to_draw.shape[0]))
 
+                # Draw the box on top of the to_draw image
+                class_num = int(top_label_indices[i])
+                cv2.rectangle(to_draw, (xmin, ymin), (xmax, ymax),
+                              self.class_colors[class_num], 2)
+                text = self.class_names[class_num] + " " + ('%.2f' % top_conf[i])
+                output_list.append(self.class_names[class_num])
 
-                for i in range(top_conf.shape[0]):
-                    if (top_conf[i] < 0.9):
-                        continue
-                    xmin = int(round(top_xmin[i] * to_draw.shape[1]))
-                    ymin = int(round(top_ymin[i] * to_draw.shape[0]))
-                    xmax = int(round(top_xmax[i] * to_draw.shape[1]))
-                    ymax = int(round(top_ymax[i] * to_draw.shape[0]))
+                text_top = (xmin, ymin - 10)
+                text_bot = (xmin + 80, ymin + 5)
+                text_pos = (xmin + 5, ymin)
+                cv2.rectangle(to_draw, text_top, text_bot, self.class_colors[class_num], -1)
+                cv2.putText(to_draw, text, text_pos, cv2.FONT_HERSHEY_SIMPLEX, 0.35, (0, 0, 0), 1)
 
-                    # Draw the box on top of the to_draw image
-                    class_num = int(top_label_indices[i])
-                    cv2.rectangle(to_draw, (xmin, ymin), (xmax, ymax),
-                                  self.class_colors[class_num], 2)
-                    text = self.class_names[class_num] + " " + ('%.2f' % top_conf[i])
-                    #print(text)
-                    output_list.append(self.class_names[class_num])
+        cv2.imshow("SSD result", to_draw)
+        cv2.waitKey(10)
 
-                    text_top = (xmin, ymin - 10)
-                    text_bot = (xmin + 80, ymin + 5)
-                    text_pos = (xmin + 5, ymin)
-                    cv2.rectangle(to_draw, text_top, text_bot, self.class_colors[class_num], -1)
-                    cv2.putText(to_draw, text, text_pos, cv2.FONT_HERSHEY_SIMPLEX, 0.35, (0, 0, 0), 1)
+        # self.current_fps += 1 # Count frame
+        #self.exec_time = None
 
-            cv2.imshow("SSD result", to_draw)
-            cv2.waitKey(10)
+        hit_detection = 0
+        for i in DETECTION_LIST:
+            hit_detection += output_list.count(i)
+        accuracy = (hit_detection / len(output_list))*100
+        return accuracy
 
-            self.current_fps += 1
-            self.exec_time = None
+    def draw_fps(self, fps_time_slot):
+        x_range = [index for index, value in enumerate(fps_time_slot)]
+        y_fps = [value[1] for index, value in enumerate(fps_time_slot)]
+        plt.ylim((0, 5))
+        plt.plot(x_range, y_fps, c='r')
+        plt.xlabel('time')
+        plt.ylabel('fps')
+        plt.show()
 
+    '''
     def timer_callback(self):
         self.current_time += 1
         if self.exec_time:
@@ -181,7 +191,7 @@ class MobileNetTest(object):
         if not self.is_finish:
             print("\rfps: {}, {} sec".format(fps, self.current_time), end="")
             self.restart_timer()
-
+            
     def restart_timer(self):
         self.timer = Timer(1, self.timer_callback)
         self.timer.start()
@@ -195,7 +205,7 @@ class MobileNetTest(object):
         if not extra_time:
             return current_fps / (1 + prev_extra_time)
         return current_fps / (1 - extra_time + prev_extra_time)
-
+        
     @staticmethod
     def calc_avg_fps(fps_time_slot):
         fps_list = [fps for sec, fps in fps_time_slot][:]
@@ -203,14 +213,5 @@ class MobileNetTest(object):
         total_time = len(fps_list)
 
         return avg_fps, total_time
+    '''
 
-    def draw_fps(self, fps_time_slot):
-        x_range = [index for index, value in enumerate(fps_time_slot)]
-        y_fps = [value[1] for index, value in enumerate(fps_time_slot)]
-        plt.ylim((0, 5))
-        plt.plot(x_range, y_fps, c='r')
-        plt.xlabel('time')
-        plt.ylabel('fps')
-        plt.show()
-
-    #def accuracy(self, fps_time_ slot):
