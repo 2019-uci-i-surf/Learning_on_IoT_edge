@@ -23,6 +23,7 @@ class ClientInstance:
         msg_body = None
         body_size = None
         while True:
+            print(str(id(self))+' 2')
             data = self.conn.recv(1024)  # 1024 byte 로 frame cut
             # When connection is closed or any problem, run close code
             if not data:
@@ -66,10 +67,12 @@ class ClientInstance:
 
         start_time = time.time
         while True:
+            print(str(id(self))+' 1')
             frame = self.frame_queue.get()
             if frame is 0:
                 self.return_procedure()
                 return
+            print(id(self))
             self.MBNet.run(frame)
 
             # measure computation delay
@@ -78,6 +81,7 @@ class ClientInstance:
 
     def return_procedure(self):
         print("communication delay: %.4f" %(self.communication_delay))
+        print("computational delay: %.4f" %(self.computation_delay))
 
     def main_task(self):
         recv_thread = Thread(target=self.recv_data)
