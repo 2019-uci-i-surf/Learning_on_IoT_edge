@@ -132,8 +132,8 @@ class MobileNetTest(object):
         hit_detection = 0
         for i in DETECTION_LIST:
             hit_detection += output_list.count(i)
-        accuracy = (hit_detection / len(output_list))*100
-        return accuracy
+        #accuracy = (hit_detection / len(output_list))*100
+        #return accuracy
 
     def draw_fps(self, fps_time_slot):
         x_range = [index for index, value in enumerate(fps_time_slot)]

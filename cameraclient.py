@@ -22,7 +22,7 @@ class CameraClient:
         count = 0
         msg = str(self.socket.recv(1024), 'utf-8')
         if msg == 'ready':
-            print('\nData Transmission Start Time :', time.strftime('%Y-%m-%d-%X', time.localtime(time.time())))
+            self.socket.sendall(bytes(str(time.time()), encoding='utf-8'))
             while True:
                 success, image = vidcap.read()
                 if not success:
