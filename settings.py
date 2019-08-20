@@ -7,7 +7,7 @@ CLASS_NAMES = ["background", "aeroplane", "bicycle", "bird", "boat", "bottle", "
                "diningtable", "dog", "horse", "motorbike", "person", "pottedplant", "sheep", "sofa", "train",
                "tvmonitor"]
 DETECTION_LIST = ['person', 'chair', 'boat']
-NUMBER_OF_SEND_VIDEO = 2
+NUMBER_OF_SEND_VIDEO = 1
 
 # This image queue size. Queue was gotten from the model
-TCP_QUEUE_SIZE = 10
+TCP_QUEUE_SIZE = 20

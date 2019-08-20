@@ -26,7 +26,7 @@ class ClientInstance:
         body_size = None
         buffer = b''
         while True:
-            data = self.conn.recv(16392)  # 1024 byte 로 frame cut
+            data = self.conn.recv(262272)  # 1024 byte 로 frame cut
             # When connection is closed or any problem, run close code
             if not data:
                 # Zero is finish flag for MobileNetTest

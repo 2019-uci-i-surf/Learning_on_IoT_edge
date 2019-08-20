@@ -8,7 +8,7 @@ PORT = 10001
 
 if __name__ == '__main__':
     procs = list()
-    for process_number in range(2):
+    for process_number in range(1):
         proc = Process(target=CameraClient.mp_routine, args=(SERVER_HOST, PORT))
         procs.append(proc)
         proc.start()
