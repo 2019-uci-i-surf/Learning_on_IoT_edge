@@ -24,7 +24,7 @@ class ClientInstance:
         msg_body = None
         body_size = None
         while True:
-            data = self.conn.recv(8192)  # 1024 byte 로 frame cut
+            data = self.conn.recv(20000)  # 1024 byte 로 frame cut
             # When connection is closed or any problem, run close code
             if not data:
                 # Zero is finish flag for MobileNetTest
@@ -49,7 +49,6 @@ class ClientInstance:
 
                 split_msg = data[header_idx:].split(b'???')
                 if len(split_msg) < 3:  # 잘못된 데이터가 들어왔을 때
-                    print(split_msg)
                     continue
                 body_size = int(split_msg[1].decode())
                 msg_body = split_msg[2]
