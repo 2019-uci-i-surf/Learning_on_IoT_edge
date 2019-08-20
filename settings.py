@@ -1,4 +1,4 @@
-SERVER_HOST = '169.234.3.32'
+SERVER_HOST = '10.8.29.72'
 SERVER_PORT = 10001
 
 INPUT_SHAPE = (300, 300, 3)
@@ -7,7 +7,7 @@ CLASS_NAMES = ["background", "aeroplane", "bicycle", "bird", "boat", "bottle", "
                "diningtable", "dog", "horse", "motorbike", "person", "pottedplant", "sheep", "sofa", "train",
                "tvmonitor"]
 DETECTION_LIST = ['person', 'chair', 'boat']
-NUMBER_OF_SEND_VIDEO = 4
+NUMBER_OF_SEND_VIDEO = 2
 
 # This image queue size. Queue was gotten from the model
 TCP_QUEUE_SIZE = 10

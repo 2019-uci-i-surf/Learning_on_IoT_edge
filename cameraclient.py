@@ -34,13 +34,8 @@ class CameraClient:
                 bytes_io.seek(0)
                 bytes_image = bytes_io.read() # byte per 1frame
 
-                # This is protocol that was defined by me
-                header = ('SIZE???' + str(len(bytes_image)) + '???').encode()
-                self.socket.send(header) # send to server 1frame
-
-                # send all raw bytes image
-                body = bytes_image
-                self.socket.sendall(body)
+                msg = ('???' + str(len(bytes_image)) + ':::').encode() + bytes_image
+                self.socket.sendall(msg)
                 print("Now frame num {}: ".format(count)) # print now frame number
 
             print("{} frames are sent.".format(count)) # print total frames
