@@ -16,6 +16,7 @@ class ClientInstance:
         self.conn_start_time = 0
         self.communication_delay = 0
         self.computational_delay_list = []
+        self.frame_times = []
 
     def recv_data(self):
         if not self.conn:
@@ -65,9 +66,6 @@ class ClientInstance:
             if self.frame_queue.qsize() <= TCP_QUEUE_SIZE:
                 self.frame_queue.put(image)
 
-    def calc_fps(self):
-        pass
-
     def run_test(self):
         while self.frame_queue.empty():
             continue
@@ -78,15 +76,24 @@ class ClientInstance:
             if frame is 0:
                 self.return_procedure()
                 return
+
             self.MBNet.run(frame)
+
+            time_taken = time.time() - start_time
+            self.frame_times.append(time_taken)
+            re_frame_times = self.frame_times[-20:]
+            fps = len(re_frame_times) / sum(re_frame_times)
+            print("\rFPS: {}".format(fps), end='')
 
             # measure computation delay
             self.computational_delay_list.append(time.time() - start_time)
 
     def return_procedure(self):
+        time.sleep(1)
         print("result of {}:{}".format(self.addr[0], self.addr[1]))
         print("communication delay: %.4f" % (self.communication_delay))
         print("computational delay: %.4f" % (sum(self.computational_delay_list)/len(self.computational_delay_list)))
+        print("Avg FPS: {}", len(self.frame_times) / sum(self.frame_times) )
 
     def main_task(self):
         recv_thread = Thread(target=self.recv_data)
