@@ -20,7 +20,7 @@ class Server:
         for _ in range(NUMBER_OF_SEND_VIDEO):
             conn, addr = self.socket.accept()
             print('successfully connected', addr[0], ':', addr[1])
-            ci = ClientInstance(self.mobile_net_test, conn)
+            ci = ClientInstance(self.mobile_net_test, conn, addr)
             self.ci_list.append(ci)
 
         for ci in self.ci_list:

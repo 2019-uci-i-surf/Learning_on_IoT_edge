@@ -35,7 +35,7 @@ class CameraClient:
                 bytes_image = bytes_io.read() # byte per 1frame
 
                 # This is protocol that was defined by me
-                header = ( 'SIZE1:' +str(len(bytes_image)) + ':').encode()
+                header = ('SIZE???' + str(len(bytes_image)) + '???').encode()
                 self.socket.send(header) # send to server 1frame
 
                 # send all raw bytes image

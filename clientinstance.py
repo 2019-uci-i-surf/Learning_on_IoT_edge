@@ -8,12 +8,13 @@ from threading import Thread
 
 class ClientInstance:
 
-    def __init__(self, MBNet, conn):
+    def __init__(self, MBNet, conn, addr):
+        self.MBNet = MBNet
         self.frame_queue = Queue()
         self.conn = conn
-        self.MBNet = MBNet
-        self.communication_delay = None
-        self.computation_delay = None
+        self.addr = addr
+        self.communication_delay = 0
+        self.computational_delay_list = []
 
     def recv_data(self):
         if not self.conn:
@@ -23,15 +24,14 @@ class ClientInstance:
         msg_body = None
         body_size = None
         while True:
-            print(str(id(self))+' 2')
-            data = self.conn.recv(1024)  # 1024 byte 로 frame cut
+            data = self.conn.recv(8192)  # 1024 byte 로 frame cut
             # When connection is closed or any problem, run close code
             if not data:
                 # Zero is finish flag for MobileNetTest
                 self.frame_queue.put(0)
                 return
             # check header
-            if b'SIZE1' in data:  # 새로운 frame이 들어왔을 때
+            if b'SIZE' in data:  # 새로운 frame이 들어왔을 때
                 header_idx = data.find(b'SIZE')  # start symbol
                 if msg_body:
                     msg_body += data[:header_idx]
@@ -41,14 +41,15 @@ class ClientInstance:
                     image = numpy.load(BytesIO(msg_body))['frame']
 
                     # measure communication delay
-                    if self.communication_delay is None:
+                    if not self.communication_delay:
                         self.communication_delay = time.time() - start_time
 
                     if self.frame_queue.qsize() <= TCP_QUEUE_SIZE:
                         self.frame_queue.put(image)
 
-                split_msg = data[header_idx:].split(b':')
+                split_msg = data[header_idx:].split(b'???')
                 if len(split_msg) < 3:  # 잘못된 데이터가 들어왔을 때
+                    print(split_msg)
                     continue
                 body_size = int(split_msg[1].decode())
                 msg_body = split_msg[2]
@@ -58,30 +59,26 @@ class ClientInstance:
     def calc_fps(self):
         pass
 
-    def calc_computation_delay(self):
-        pass
-
     def run_test(self):
         while self.frame_queue.empty():
             continue
 
-        start_time = time.time
         while True:
-            print(str(id(self))+' 1')
+            start_time = time.time()
             frame = self.frame_queue.get()
+
             if frame is 0:
                 self.return_procedure()
                 return
-            print(id(self))
             self.MBNet.run(frame)
 
             # measure computation delay
-            if self.communication_delay is None:
-                self.communication_delay = time.time() - start_time
+            self.computational_delay_list.append(time.time() - start_time)
 
     def return_procedure(self):
-        print("communication delay: %.4f" %(self.communication_delay))
-        print("computational delay: %.4f" %(self.computation_delay))
+        print("result of {}:{}".format(self.addr[0], self.addr[1]))
+        print("communication delay: %.4f" % (self.communication_delay))
+        print("computational delay: %.4f" % (sum(self.computational_delay_list)/len(self.computational_delay_list)))
 
     def main_task(self):
         recv_thread = Thread(target=self.recv_data)
