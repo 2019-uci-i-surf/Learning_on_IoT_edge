@@ -5,7 +5,6 @@ from queue import Queue
 from settings import TCP_QUEUE_SIZE
 from threading import Thread
 
-
 class ClientInstance:
 
     def __init__(self, MBNet, conn, addr):
@@ -26,11 +25,11 @@ class ClientInstance:
         body_size = None
         buffer = b''
         while True:
-            data = self.conn.recv(16392)  # 1024 byte 로 frame cut
+            data = self.conn.recv(524544)  # 1024 byte 로 frame cut
             # When connection is closed or any problem, run close code
             if not data:
                 # Zero is finish flag for MobileNetTest
-                self.frame_queue.put(0)
+                self.frame_queue.put((0, 0))
                 return
             buffer += data
             while b'???' in buffer:
@@ -64,26 +63,25 @@ class ClientInstance:
                 self.communication_delay = time.time() - self.conn_start_time
 
             if self.frame_queue.qsize() <= TCP_QUEUE_SIZE:
-                self.frame_queue.put(image)
+                self.frame_queue.put((image, time.time()))
 
     def run_test(self):
         while self.frame_queue.empty():
             continue
 
         while True:
-            start_time = time.time()
-            frame = self.frame_queue.get()
+            frame, start_time = self.frame_queue.get()
+            fps_start_time = time.time()
             if frame is 0:
                 self.return_procedure()
                 return
 
             self.MBNet.run(frame)
 
-            time_taken = time.time() - start_time
+            time_taken = time.time() - fps_start_time
             self.frame_times.append(time_taken)
             re_frame_times = self.frame_times[-20:]
             fps = len(re_frame_times) / sum(re_frame_times)
-            print("\rFPS: {}".format(fps), end='')
 
             # measure computation delay
             self.computational_delay_list.append(time.time() - start_time)
