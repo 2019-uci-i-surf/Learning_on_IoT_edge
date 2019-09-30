@@ -1,7 +1,7 @@
 import numpy
 import time
 from io import BytesIO
-from queue import Queue
+from import Queue
 from settings import TCP_QUEUE_SIZE
 from threading import Thread
 import timeit
@@ -61,7 +61,7 @@ class ClientInstance:
                 buffer = buffer[size_idx+3:]
 
     def _put_frame(self, body_size, msg_body):
-        #print("queue_size : ", self.frame_queue.qsize())
+        print("queue_size : ", self.frame_queue.qsize())
         # chec msg_body is whole
         if body_size and len(msg_body) == body_size:
             image = numpy.load(BytesIO(msg_body))['frame']
