@@ -20,7 +20,7 @@ class CameraClient:
     def transmission(self, video_path):
         vidcap = cv2.VideoCapture(video_path)
         count = 0
-        msg = str(self.socket.recv(1024), 'utf-8')
+        msg = str(self.socket.recv(1024), 'utf-8') # receive data(broadcast or ready) from server
         if msg == 'ready':
             self.socket.sendall(bytes(str(time.time()), encoding='utf-8'))
             while True:
@@ -34,9 +34,10 @@ class CameraClient:
                 bytes_io.seek(0)
                 bytes_image = bytes_io.read() # byte per 1frame
 
+                #
                 msg = ('???' + str(len(bytes_image)) + ':::').encode() + bytes_image
                 self.socket.sendall(msg)
-                print("Now frame num {}: ".format(count)) # print now frame number
+                print("Now frame num : ", count, "frame size", str(len(bytes_image))) # print now frame number
 
             print("{} frames are sent.".format(count)) # print total frames
 
