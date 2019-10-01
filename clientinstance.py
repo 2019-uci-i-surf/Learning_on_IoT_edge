@@ -24,11 +24,14 @@ class ClientInstance:
         self.conn_start_time = float(str(self.conn.recv(1024), 'utf-8'))
         body_size = None
         buffer = b''
-        self.count1=0
-        self.count2=0
+        self.count1 = 0
+        self.count2 = 0
+        self.put_count = 0
         while True:
-            self.count2=self.count2+1
-            data = self.conn.recv(1049088)
+            self.count1=self.count1+1
+            print("count1 : ",self.count1)
+            data = self.conn.recv(16384)
+
             #print(data)
             # When connection is closed or any problem, run close code
             if not data:
@@ -36,32 +39,34 @@ class ClientInstance:
                 self.frame_queue.put((0, 0))
                 return
             buffer += data
+            print("buffer length : ", len(buffer))
 
-            while b'???' in buffer:
-                self.count1=self.count1+1
-                header_idx = buffer.find(b'???')
-                if header_idx != 0:
-                    msg_body = buffer[:header_idx]
-                    self._put_frame(body_size, msg_body)
-                    buffer = buffer[header_idx:]
-                    header_idx = 0
-                if b':::' not in buffer:
-                    buffer = b''
-                    body_size = None
-                    break
-                size_idx = buffer.find(b':::')
-                body_size = buffer[header_idx+3:size_idx].decode(errors="ignore")
-                #print("body size : ", body_size)
+            while (b'Start_symbol' in buffer) and (b'End_Symbol' in buffer):
+                self.count2 = self.count2+1
+                print("count2 : ", self.count2)
+                header_idx = buffer.find(b'Start_symbol')
+                size_idx = buffer.find(b'Size_symbol')
+                end_idx = buffer.find(b'End_Symbol')
+
+                msg_body = buffer[size_idx+11:end_idx]
+                print("body size", len(msg_body))
+                print("header_idx : ", header_idx)
+                print("end_idx : ", end_idx)
+
+                body_size = buffer[header_idx + 12:size_idx].decode(errors="ignore")
+                print("body_size", body_size)
+
                 if body_size.isdigit():
                     body_size = int(body_size)
-                else:
-                    buffer = b''
-                    body_size = None
-                    break
-                buffer = buffer[size_idx+3:]
+
+                if len(msg_body) == body_size:
+                    print("same")
+                    self._put_frame(body_size, msg_body)
+                    buffer = buffer[end_idx+10:]
 
     def _put_frame(self, body_size, msg_body):
-        #print("queue_size : ", self.frame_queue.qsize())
+        self.put_count=self.put_count+1
+        print("put_count:", self.put_count ,", queue_size : ", self.frame_queue.qsize())
         # chec msg_body is whole
         if body_size and len(msg_body) == body_size:
             image = numpy.load(BytesIO(msg_body))['frame']
@@ -103,6 +108,7 @@ class ClientInstance:
         print("computational delay: %.4f" % (sum(self.computational_delay_list)/len(self.computational_delay_list)))
         print("Avg FPS: {}", len(self.frame_times) / sum(self.frame_times) )
         print(self.computational_delay_list)
+        print(len(self.computational_delay_list))
         print("count1, count2 : ", self.count1, self.count2)
 
 
