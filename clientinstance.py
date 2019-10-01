@@ -41,11 +41,11 @@ class ClientInstance:
             buffer += data
             print("buffer length : ", len(buffer))
 
-            while (b'Start_symbol' in buffer) and (b'End_Symbol' in buffer):
+            while (b'Start_Symbol' in buffer) and (b'End_Symbol' in buffer):
                 self.count2 = self.count2+1
                 print("count2 : ", self.count2)
-                header_idx = buffer.find(b'Start_symbol')
-                size_idx = buffer.find(b'Size_symbol')
+                header_idx = buffer.find(b'Start_Symbol')
+                size_idx = buffer.find(b'Size_Symbol')
                 end_idx = buffer.find(b'End_Symbol')
 
                 msg_body = buffer[size_idx+11:end_idx]

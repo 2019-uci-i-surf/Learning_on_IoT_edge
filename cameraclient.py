@@ -34,8 +34,8 @@ class CameraClient:
                 bytes_io.seek(0)
                 bytes_image = bytes_io.read() # byte per 1frame
 
-                #
-                msg = ('Start_symbol' + str(len(bytes_image)) + 'Size_symbol').encode() + bytes_image + ('End_Symbol').encode()
+
+                msg = ('Start_Symbol' + str(len(bytes_image)) + 'Size_Symbol').encode() + bytes_image + ('End_Symbol').encode()
                 self.socket.sendall(msg)
                 print("Now frame num : ", count, "frame size", str(len(bytes_image))) # print now frame number
 
