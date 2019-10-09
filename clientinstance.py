@@ -16,7 +16,8 @@ class ClientInstance:
         self.communication_delay = 0
         self.computational_delay_list = []
         self.frame_times = []
-        self.fps_list=[]
+        self.fps_list = []
+        self.client_id = ' '
 
         self.receive_count = 0
         self.put_count = 0
@@ -39,34 +40,29 @@ class ClientInstance:
             # When connection is closed or any problem, run close code
             if not data:
                 # Zero is finish flag for MobileNetTest
-                self.frame_queue.put((0, 0))
+                self.frame_queue.put((0, 0, 0))
                 return
             buffer += data
-            print("buffer length : ", len(buffer))
 
             while (b'Start_Symbol' in buffer) and (b'End_Symbol' in buffer):
-                header_idx = buffer.find(b'Start_Symbol')
+                start_idx = buffer.find(b'Start_Symbol')
+                id_idx = buffer.find(b'Id_Symbol')
                 size_idx = buffer.find(b'Size_Symbol')
                 end_idx = buffer.find(b'End_Symbol')
 
                 msg_body = buffer[size_idx+11:end_idx]
-                print("body size", len(msg_body))
-                print("header_idx : ", header_idx)
-                print("end_idx : ", end_idx)
-
-                body_size = buffer[header_idx + 12:size_idx].decode(errors="ignore")
-                print("body_size", body_size)
+                self.client_id = buffer[start_idx + 12: id_idx].decode(errors="ignore")
+                body_size = buffer[id_idx + 9:size_idx].decode(errors="ignore")
 
                 if body_size.isdigit():
                     body_size = int(body_size)
 
                 if len(msg_body) == body_size:
-                    print("same")
                     self._put_frame(body_size, msg_body)
                     buffer = buffer[end_idx+10:]
 
     def _put_frame(self, body_size, msg_body):
-        self.put_count=self.put_count+1
+        self.put_count = self.put_count+1
         print("put_count:", self.put_count ,", queue_size : ", self.frame_queue.qsize())
         if body_size and len(msg_body) == body_size:
             image = numpy.load(BytesIO(msg_body))['frame']
@@ -78,7 +74,7 @@ class ClientInstance:
                 print(",communication : ", self.communication_delay)
 
             if self.frame_queue.qsize() < TCP_QUEUE_SIZE:
-                self.frame_queue.put((image, time.time()))
+                self.frame_queue.put((image, time.time(), self.client_id))
 
             else:
                 self.frame_drop_count+=1
@@ -88,7 +84,7 @@ class ClientInstance:
             continue
 
         while True:
-            frame, start_time = self.frame_queue.get()
+            frame, start_time, id = self.frame_queue.get()
             fps_start_time = time.time()
             if frame is 0:
                 self.return_procedure()
@@ -105,10 +101,13 @@ class ClientInstance:
 
             # measure computation delay
             self.computational_delay_list.append(time.time() - start_time)
+            print(id,"s frame processing complete")
+
+            #print(self.client_id,"s Frame Processing Complete")
 
     def return_procedure(self):
         time.sleep(1)
-        print("result of {}:{}".format(self.addr[0], self.addr[1]))
+        print("\nresult of", self.client_id)
         print("communication delay: %.4f" % (self.communication_delay))
         print("computational delay: %.4f" % (sum(self.computational_delay_list)/len(self.computational_delay_list)))
         print("Avg FPS:", sum(self.fps_list) / len(self.fps_list) )
