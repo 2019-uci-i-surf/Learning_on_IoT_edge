@@ -17,7 +17,7 @@ class Server:
         print('Ready to accept client')
 
         thread_list = []
-        for _ in range(NUMBER_OF_RECEIVE_VIDEO):
+        for _ in range(NUMBER_OF_RECEIVE_CLIENT):
             conn, addr = self.socket.accept()
             print('successfully connected', addr[0], ':', addr[1])
             ci = ClientInstance(self.mobile_net_test, conn, addr)
