@@ -27,8 +27,8 @@ class CameraClient:
         count = 0
         msg = str(self.socket.recv(1024), 'utf-8') # receive data(broadcast or start) from server
         if msg == 'broadcast_start':
-            self.start_send_time = time.time()
-            self.socket.sendall(bytes(str(self.start_send_time), encoding='utf-8'))
+
+            self.socket.sendall(bytes(str(time.time()), encoding='utf-8'))
             while True:
                 success, image = vidcap.read()
                 if not success:
@@ -46,6 +46,8 @@ class CameraClient:
     def get_frame(self):
         while self.wait_send_queue.empty():
             continue
+        # start get frame from queue
+        self.start_send_time = time.time()
 
         count = 0
         last_time = time.time()
