@@ -27,7 +27,8 @@ class CameraClient:
         count = 0
         msg = str(self.socket.recv(1024), 'utf-8') # receive data(broadcast or start) from server
         if msg == 'broadcast_start':
-            self.socket.sendall(bytes(str(time.time()), encoding='utf-8'))
+            self.start_send_time = time.time()
+            self.socket.sendall(bytes(str(self.start_send_time), encoding='utf-8'))
             while True:
                 success, image = vidcap.read()
                 if not success:
@@ -77,6 +78,5 @@ class CameraClient:
     def mp_routine(host, port):
         cc = CameraClient()
         cc.connect_to_server(host=host, port=port)
-        cc.start_send_time = time.time()
         cc.put_frame(video_path=VIDEO_PATH)
         cc.get_frame()
