@@ -2,7 +2,7 @@ import numpy
 import time
 from io import BytesIO
 from queue import Queue
-from settings import TCP_QUEUE_SIZE
+from settings import *
 from threading import Thread
 import timeit
 
@@ -27,7 +27,7 @@ class ClientInstance:
     def recv_data(self):
         if not self.conn:
             raise Exception("Connection is not established")
-        self.conn.sendall(b'ready')
+        self.conn.sendall(b'broadcast_start')
         self.conn_start_time = float(str(self.conn.recv(1024), 'utf-8'))
         body_size = None
         buffer = b''
@@ -72,10 +72,8 @@ class ClientInstance:
                 self.communication_delay = time.time() - self.conn_start_time
                 print("start_time : ", self.conn_start_time, ",current_time : ", time.time())
                 print(",communication : ", self.communication_delay)
-
-            if self.frame_queue.qsize() < TCP_QUEUE_SIZE:
+            if self.frame_queue.qsize() < SERVER_QUEUE_SIZE:
                 self.frame_queue.put((image, time.time(), self.client_id))
-
             else:
                 self.frame_drop_count+=1
 
@@ -91,7 +89,6 @@ class ClientInstance:
                 return
 
             self.run_count = self.run_count + 1
-
             self.MBNet.run(frame)
 
             time_taken = time.time() - fps_start_time
@@ -117,7 +114,7 @@ class ClientInstance:
     def main_task(self):
         recv_thread = Thread(target=self.recv_data)
         recv_thread.start()
-        test_thread = Thread(target=self.run_test)
-        test_thread.start()
+        run_thread = Thread(target=self.run_test)
+        run_thread.start()
         recv_thread.join()
-        test_thread.join()
+        run_thread.join()

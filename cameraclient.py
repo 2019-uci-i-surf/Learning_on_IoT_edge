@@ -5,28 +5,30 @@ from io import BytesIO
 from settings import *
 import cv2
 import time
+from queue import Queue
 
-VIDEO_PATH = r'Pexels Videos 1466210.mp4'
 
 class CameraClient:
     def __init__(self):
         self.socket = socket(AF_INET, SOCK_STREAM)
         self.time_list=[]
         self.frame_rate=[]
+        self.wait_send_queue = Queue()
+        self.number_of_sent_frame = 0
+        self.start_send_time = 0
 
     def connect_to_server(self, host, port):
         print('try to connect to server..')
         self.socket.connect((host, port))
-        print('successfully connected')
+        print('successfully connected to server')
 
-    def transmission(self, video_path):
+    def put_frame(self, video_path):
         vidcap = cv2.VideoCapture(video_path)
         count = 0
-        msg = str(self.socket.recv(1024), 'utf-8') # receive data(broadcast or ready) from server
-        if msg == 'ready':
+        msg = str(self.socket.recv(1024), 'utf-8') # receive data(broadcast or start) from server
+        if msg == 'broadcast_start':
             self.socket.sendall(bytes(str(time.time()), encoding='utf-8'))
             while True:
-                frame_start = time.time()
                 success, image = vidcap.read()
                 if not success:
                     print('video is not opened!')
@@ -38,19 +40,43 @@ class CameraClient:
                 bytes_image = bytes_io.read() # byte per 1frame
 
                 msg = ('Start_Symbol' + CLIENT_ID + 'Id_Symbol' + str(len(bytes_image)) + 'Size_Symbol').encode() + bytes_image + ('End_Symbol').encode()
-                self.socket.sendall(msg)
-                print("Now frame num : ", count, "frame size", str(len(bytes_image))) # print now frame number
+                self.wait_send_queue.put(msg)
 
-                sending_time = time.time() - frame_start
-                self.time_list.append(sending_time)
-                time_lists = self.time_list[-20:]
-                self.frame_rate.append(len(time_lists) / sum(time_lists))
+    def get_frame(self):
+        while self.wait_send_queue.empty():
+            continue
 
-            print("{} frames are sent.".format(count)) # print total
-            print("Avg Frame rate of sending:", sum(self.frame_rate) / len(self.frame_rate))
+        count = 0
+        last_time = time.time()
+        while 1:
+            current_time = time.time()
+            if current_time > last_time+1:
+                last_time = current_time
+                count = 0
+            if count <= RATE_OF_SENDING_PART:
+                self.send_frame()
+                count += 1
+            if self.number_of_sent_frame == NUMBER_OF_TOTAL_FRAME:
+                self.result()
+                break
+
+    def send_frame(self):
+        frame = self.wait_send_queue.get()
+        self.socket.sendall(frame)
+        self.number_of_sent_frame += 1
+        print("sent frame : ", self.number_of_sent_frame)
+
+    def result(self):
+        run_time = time.time()-self.number_of_sent_frame
+        print("\nSending of", CLIENT_ID, "complete")
+        print(self.number_of_sent_frame, "frames are sent.")
+        print("run time : ", run_time)
+        print("Avg Frame rate of sending:", self.number_of_sent_frame / run_time)
 
     @staticmethod
     def mp_routine(host, port):
         cc = CameraClient()
         cc.connect_to_server(host=host, port=port)
-        cc.transmission(video_path=VIDEO_PATH)
+        cc.start_send_time = time.time()
+        cc.put_frame(video_path=VIDEO_PATH)
+        cc.get_frame()
