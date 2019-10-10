@@ -51,12 +51,12 @@ class CameraClient:
 
         count = 0
         last_time = time.time()
-        while 1:
+        while True:
             current_time = time.time()
             if current_time > last_time+1:
                 last_time = current_time
                 count = 0
-            if count <= RATE_OF_SENDING_PART:
+            if count < RATE_OF_SENDING_PART:
                 self.send_frame()
                 count += 1
             if self.number_of_sent_frame == NUMBER_OF_TOTAL_FRAME:
@@ -67,7 +67,7 @@ class CameraClient:
         frame = self.wait_send_queue.get()
         self.socket.sendall(frame)
         self.number_of_sent_frame += 1
-        print("sent frame : ", self.number_of_sent_frame)
+        print(CLIENT_ID, "sent frame : ", self.number_of_sent_frame)
 
     def result(self):
         run_time = time.time()-self.start_send_time
