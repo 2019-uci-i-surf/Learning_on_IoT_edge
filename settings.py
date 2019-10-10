@@ -5,7 +5,7 @@ SERVER_PORT = 10001
 # Need to change on Client part
 CLIENT_ID = "Laptop"
 NUMBER_OF_SEND_VIDEO = 1
-RATE_OF_SENDING_PART = 5
+RATE_OF_SENDING_PART = 6
 
 # Need to change on Server part
 SERVER_QUEUE_SIZE = 40

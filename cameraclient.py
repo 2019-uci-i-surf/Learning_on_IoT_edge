@@ -67,7 +67,7 @@ class CameraClient:
         print("sent frame : ", self.number_of_sent_frame)
 
     def result(self):
-        run_time = time.time()-self.number_of_sent_frame
+        run_time = time.time()-self.start_send_time
         print("\nSending of", CLIENT_ID, "complete")
         print(self.number_of_sent_frame, "frames are sent.")
         print("run time : ", run_time)

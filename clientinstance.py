@@ -4,7 +4,6 @@ from io import BytesIO
 from queue import Queue
 from settings import *
 from threading import Thread
-import timeit
 
 class ClientInstance:
     def __init__(self, MBNet, conn, addr):
@@ -36,7 +35,6 @@ class ClientInstance:
             self.receive_count=self.receive_count+1
             data = self.conn.recv(16384)
 
-            #print(data)
             # When connection is closed or any problem, run close code
             if not data:
                 # Zero is finish flag for MobileNetTest
@@ -99,8 +97,6 @@ class ClientInstance:
             # measure computation delay
             self.computational_delay_list.append(time.time() - start_time)
             print(id,"s frame processing complete")
-
-            #print(self.client_id,"s Frame Processing Complete")
 
     def return_procedure(self):
         time.sleep(1)
