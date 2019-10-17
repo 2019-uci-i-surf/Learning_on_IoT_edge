@@ -1,14 +1,12 @@
 import numpy
 import time
 from io import BytesIO
-from queue import Queue
 from settings import *
 from threading import Thread
 
 class ClientInstance:
-    def __init__(self, MBNet, conn, addr):
+    def __init__(self, MBNet, conn, addr, queue):
         self.MBNet = MBNet
-        self.frame_queue = Queue()
         self.conn = conn
         self.addr = addr
         self.conn_start_time = 0
@@ -23,10 +21,13 @@ class ClientInstance:
         self.run_count = 0
         self.frame_drop_count = 0
 
+        self.frame_queue = queue
+
     def recv_data(self):
         if not self.conn:
             raise Exception("Connection is not established")
         self.conn.sendall(b'broadcast_start')
+        print("Broadcast to Device")
         self.conn_start_time = float(str(self.conn.recv(1024), 'utf-8'))
         body_size = None
         buffer = b''
@@ -38,7 +39,7 @@ class ClientInstance:
             # When connection is closed or any problem, run close code
             if not data:
                 # Zero is finish flag for MobileNetTest
-                self.frame_queue.put((0, 0, 0))
+                self.frame_queue.put((0, 0, 0, 0))
                 return
             buffer += data
 
@@ -47,31 +48,33 @@ class ClientInstance:
                 id_idx = buffer.find(b'Id_Symbol')
                 size_idx = buffer.find(b'Size_Symbol')
                 end_idx = buffer.find(b'End_Symbol')
+                frame_idx = buffer.find(b'Frame_Num')
 
-                msg_body = buffer[size_idx+11:end_idx]
+                msg_body = buffer[frame_idx+9:end_idx]
                 self.client_id = buffer[start_idx + 12: id_idx].decode(errors="ignore")
                 body_size = buffer[id_idx + 9:size_idx].decode(errors="ignore")
+                frame_num = int(buffer[size_idx+11:frame_idx].decode(errors="ignore"))
 
                 if body_size.isdigit():
                     body_size = int(body_size)
 
                 if len(msg_body) == body_size:
-                    self._put_frame(body_size, msg_body)
+                    self._put_frame(body_size, frame_num, msg_body)
                     buffer = buffer[end_idx+10:]
 
-    def _put_frame(self, body_size, msg_body):
+    def _put_frame(self, body_size, frame_num, msg_body):
         self.put_count = self.put_count+1
-        print("put_count:", self.put_count ,", queue_size : ", self.frame_queue.qsize())
+        print(self.client_id, "queue_size : ", self.frame_queue.qsize())
         if body_size and len(msg_body) == body_size:
             image = numpy.load(BytesIO(msg_body))['frame']
 
             # measure communication delay
             if not self.communication_delay:
                 self.communication_delay = time.time() - self.conn_start_time
-                print("start_time : ", self.conn_start_time, ",current_time : ", time.time())
-                print(",communication : ", self.communication_delay)
+                ##print("start_time : ", self.conn_start_time, ",current_time : ", time.time())
+                ##print(",communication : ", self.communication_delay)
             if self.frame_queue.qsize() < SERVER_QUEUE_SIZE:
-                self.frame_queue.put((image, time.time(), self.client_id))
+                self.frame_queue.put((image, time.time(), self.client_id, frame_num))
             else:
                 self.frame_drop_count+=1
 
@@ -80,14 +83,14 @@ class ClientInstance:
             continue
 
         while True:
-            frame, start_time, id = self.frame_queue.get()
+            frame, start_time, id, frame_num = self.frame_queue.get()
             fps_start_time = time.time()
             if frame is 0:
                 self.return_procedure()
                 return
 
             self.run_count = self.run_count + 1
-            self.MBNet.run(frame)
+            self.MBNet.run(frame, frame_num)
 
             time_taken = time.time() - fps_start_time
             self.frame_times.append(time_taken)
@@ -96,7 +99,7 @@ class ClientInstance:
 
             # measure computation delay
             self.computational_delay_list.append(time.time() - start_time)
-            print(id,"s frame processing complete")
+            #print(id,"s frame processing complete")
 
     def return_procedure(self):
         time.sleep(1)

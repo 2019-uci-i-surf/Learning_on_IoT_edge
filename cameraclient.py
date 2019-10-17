@@ -1,4 +1,3 @@
-import time
 import numpy
 from socket import socket, AF_INET, SOCK_STREAM
 from io import BytesIO
@@ -6,7 +5,7 @@ from settings import *
 import cv2
 import time
 from queue import Queue
-
+import math
 
 class CameraClient:
     def __init__(self):
@@ -27,7 +26,6 @@ class CameraClient:
         count = 0
         msg = str(self.socket.recv(1024), 'utf-8') # receive data(broadcast or start) from server
         if msg == 'broadcast_start':
-
             self.socket.sendall(bytes(str(time.time()), encoding='utf-8'))
             while True:
                 success, image = vidcap.read()
@@ -40,7 +38,7 @@ class CameraClient:
                 bytes_io.seek(0)
                 bytes_image = bytes_io.read() # byte per 1frame
 
-                msg = ('Start_Symbol' + CLIENT_ID + 'Id_Symbol' + str(len(bytes_image)) + 'Size_Symbol').encode() + bytes_image + ('End_Symbol').encode()
+                msg = ('Start_Symbol' + CLIENT_ID + 'Id_Symbol' + str(len(bytes_image)) + 'Size_Symbol' + str(count) + 'Frame_Num').encode() + bytes_image + ('End_Symbol').encode()
                 self.wait_send_queue.put(msg)
 
     def get_frame(self):
@@ -49,16 +47,18 @@ class CameraClient:
         # start get frame from queue
         self.start_send_time = time.time()
 
-        count = 0
+        count = RATE_OF_SENDING_PART
         last_time = time.time()
         while True:
             current_time = time.time()
-            if current_time > last_time+1:
+            if current_time > last_time + 1:
                 last_time = current_time
-                count = 0
-            if count < RATE_OF_SENDING_PART:
+                count = round(count + RATE_OF_SENDING_PART, 3)
+                print("count : ", count)
+            if count >= 1:
                 self.send_frame()
-                count += 1
+                count = round(count-1, 3)
+
             if self.number_of_sent_frame == NUMBER_OF_TOTAL_FRAME:
                 self.result()
                 break

@@ -7,6 +7,7 @@ from model.ssd300MobileNet import SSD
 from model.utils.ssd_utils import BBoxUtility
 import matplotlib.pyplot as plt
 from settings import *
+import time
 
 class MobileNetTest(object):
     """ Class for testing a trained SSD model on a video file and show the
@@ -63,7 +64,7 @@ class MobileNetTest(object):
             col = (int(cvcol[0][0][0]), int(cvcol[0][0][1]), int(cvcol[0][0][2]))
             self.class_colors.append(col)
 
-    def run(self, frame, conf_thresh=0.6):
+    def run(self, frame, frame_num, conf_thresh=0.6):
         """ Runs the test on a video (or webcam)
 
         # Arguments
@@ -102,6 +103,7 @@ class MobileNetTest(object):
             top_xmax = det_xmax[top_indices]
             top_ymax = det_ymax[top_indices]
 
+            output_list.append(frame_num)
             for i in range(top_conf.shape[0]):
                 if (top_conf[i] < 0.9):
                     continue
@@ -126,12 +128,10 @@ class MobileNetTest(object):
         cv2.imshow("SSD result", to_draw)
         cv2.waitKey(10)
 
-        # self.current_fps += 1 # Count frame
-        #self.exec_time = None
-
-        hit_detection = 0
-        for i in DETECTION_LIST:
-            hit_detection += output_list.count(i)
+        #hit_detection = 0
+        #for i in DETECTION_LIST:
+        #    hit_detection += output_list.count(i)
+        #print(output_list)
         #accuracy = (hit_detection / len(output_list))*100
         #return accuracy
 
@@ -144,46 +144,4 @@ class MobileNetTest(object):
         plt.ylabel('fps')
         plt.show()
 
-    '''
-    def timer_callback(self):
-        self.current_time += 1
-        if self.exec_time:
-            self.extra_time = time.time() - self.exec_time
-        fps = self.calc_fps(self.current_fps, self.prev_extra_time, self.extra_time)
-        if self.fps_start:
-            self.fps_time_slot.append((self.current_time, fps))
-        else:
-            if fps>0:
-                self.fps_time_slot.append((self.current_time, fps))
-                self.fps_start = True
-                self.fps_start_time = self.current_time
-
-        self.current_fps = 0
-        self.prev_extra_time = self.extra_time
-        if not self.is_finish:
-            print("\rfps: {}, {} sec".format(fps, self.current_time), end="")
-            self.restart_timer()
-            
-    def restart_timer(self):
-        self.timer = Timer(1, self.timer_callback)
-        self.timer.start()
-
-    @staticmethod
-    def calc_fps(current_fps, prev_extra_time, extra_time):
-        if not prev_extra_time and not extra_time:
-            return current_fps
-        if not prev_extra_time:
-            return current_fps / (1 - extra_time)
-        if not extra_time:
-            return current_fps / (1 + prev_extra_time)
-        return current_fps / (1 - extra_time + prev_extra_time)
-        
-    @staticmethod
-    def calc_avg_fps(fps_time_slot):
-        fps_list = [fps for sec, fps in fps_time_slot][:]
-        avg_fps = sum(fps_list) / len(fps_list)
-        total_time = len(fps_list)
-
-        return avg_fps, total_time
-    '''
 
