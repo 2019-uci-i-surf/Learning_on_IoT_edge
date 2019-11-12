@@ -5,7 +5,6 @@ from settings import *
 import cv2
 import time
 from queue import Queue
-import math
 
 class CameraClient:
     def __init__(self):

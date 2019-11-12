@@ -1,5 +1,5 @@
 # Need to change on Both part
-SERVER_HOST = '192.168.1.7'
+SERVER_HOST = '192.168.1.9'
 SERVER_PORT = 10001
 
 # Need to change on Client part
