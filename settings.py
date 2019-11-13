@@ -3,7 +3,7 @@ SERVER_HOST = '192.168.1.9'
 SERVER_PORT = 10001
 
 # Need to change on Client part
-CLIENT_ID = "Laptop"
+CLIENT_ID = "RPI1"
 NUMBER_OF_SEND_VIDEO = 1
 RATE_OF_SENDING_PART = 20
 
