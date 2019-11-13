@@ -5,6 +5,7 @@ from settings import *
 import cv2
 import time
 from queue import Queue
+from multiprocessing import Process
 
 class CameraClient:
     def __init__(self):
@@ -79,5 +80,11 @@ class CameraClient:
     def mp_routine(host, port):
         cc = CameraClient()
         cc.connect_to_server(host=host, port=port)
-        cc.put_frame(video_path=VIDEO_PATH)
-        cc.get_frame()
+        put_proc = Process(target=cc.put_frame, args=VIDEO_PATH)
+        get_proc = Process(target=cc.get_frame)
+
+        put_proc.start()
+        get_proc.start()
+
+        put_proc.join()
+        get_proc.join()

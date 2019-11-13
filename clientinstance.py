@@ -2,7 +2,7 @@ import numpy
 import time
 from io import BytesIO
 from settings import *
-from multiprocessing import Process
+from threading import Thread
 
 class ClientInstance:
     def __init__(self, MBNet, conn, addr, queue):
@@ -111,9 +111,9 @@ class ClientInstance:
               , ", run_count:", self.run_count, ", frame_drop_count:", self.frame_drop_count)
 
     def main_task(self):
-        recv_process = Process(target=self.recv_data)
-        run_process = Process(target=self.run_test)
-        recv_process.start()
-        run_process.start()
-        recv_process.join()
-        run_process.join()
+        recv_thread = Thread(target=self.recv_data)
+        recv_thread.start()
+        run_thread = Thread(target=self.run_test)
+        run_thread.start()
+        recv_thread.join()
+        run_thread.join()
