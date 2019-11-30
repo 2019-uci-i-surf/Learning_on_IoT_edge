@@ -111,9 +111,11 @@ class ClientInstance:
               , ", run_count:", self.run_count, ", frame_drop_count:", self.frame_drop_count)
 
     def main_task(self):
+        start_time = time.time()
         recv_thread = Thread(target=self.recv_data)
         recv_thread.start()
         run_thread = Thread(target=self.run_test)
         run_thread.start()
         recv_thread.join()
         run_thread.join()
+        print("Total runtime : ", time.time() - start_time)
