@@ -64,7 +64,7 @@ class ClientInstance:
 
     def _put_frame(self, body_size, frame_num, msg_body):
         self.put_count = self.put_count+1
-        print(self.client_id, "queue_size : ", self.frame_queue.qsize())
+        #print(self.client_id, "queue_size : ", self.frame_queue.qsize())
         if body_size and len(msg_body) == body_size:
             image = numpy.load(BytesIO(msg_body))['frame']
 
@@ -99,7 +99,7 @@ class ClientInstance:
 
             # measure computation delay
             self.computational_delay_list.append(time.time() - start_time)
-            #print(id,"s frame processing complete")
+            print(id,"'s", frame_num,"frame processing complete")
 
     def return_procedure(self):
         time.sleep(1)
@@ -107,7 +107,7 @@ class ClientInstance:
         print("communication delay: %.4f" % (self.communication_delay))
         print("computational delay: %.4f" % (sum(self.computational_delay_list)/len(self.computational_delay_list)))
         print("Avg FPS:", sum(self.fps_list) / len(self.fps_list) )
-        print("receive_count:", self.receive_count, ", put_count:", self.put_count
+        print("put_count:", self.put_count
               , ", run_count:", self.run_count, ", frame_drop_count:", self.frame_drop_count)
 
     def main_task(self):
