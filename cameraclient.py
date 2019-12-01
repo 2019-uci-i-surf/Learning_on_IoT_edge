@@ -30,7 +30,6 @@ class CameraClient:
             while True:
                 success, image = vidcap.read()
                 if not success:
-                    print('video is not opened!')
                     break
                 count += 1
                 bytes_io = BytesIO()
