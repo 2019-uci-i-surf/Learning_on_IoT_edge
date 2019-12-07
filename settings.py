@@ -1,5 +1,5 @@
 # Need to change on Both part
-SERVER_HOST = '192.168.1.9'
+SERVER_HOST = '192.168.1.4'
 SERVER_PORT = 10001
 
 # Need to change on Client part
@@ -9,7 +9,7 @@ RATE_OF_SENDING_PART = 100
 
 # Need to change on Server part
 SERVER_QUEUE_SIZE = 500
-NUMBER_OF_RECEIVE_VIDEOS = 8
+NUMBER_OF_RECEIVE_VIDEOS = 1
 
 NUMBER_OF_TOTAL_FRAME = 461
 VIDEO_PATH = r'Pexels Videos 1466210.mp4'

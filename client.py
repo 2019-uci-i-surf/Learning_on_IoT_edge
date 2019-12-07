@@ -11,7 +11,7 @@ if __name__ == '__main__':
         proc = Process(target=CameraClient.mp_routine, args=(SERVER_HOST, SERVER_PORT))
         procs.append(proc)
         proc.start()
-        time.sleep(1)
+        time.sleep(0.5)
 
     for proc in procs:
         proc.join()

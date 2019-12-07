@@ -10,10 +10,11 @@ class ClientInstance:
         self.conn = conn
         self.addr = addr
         self.conn_start_time = 0
-        self.communication_delay = 0
-        self.computational_delay_list = []
-        self.frame_times = []
-        self.fps_list = []
+        self.communication_delay_list = []
+        self.computation_start_time = 0
+        self.computation_end_time = 0
+        self.main_fps_start_time = 0
+        self.fps_end_time = 0
         self.client_id = ' '
 
         self.receive_count = 0
@@ -28,7 +29,6 @@ class ClientInstance:
             raise Exception("Connection is not established")
         self.conn.sendall(b'broadcast_start')
         print("Broadcast to Device")
-        self.conn_start_time = float(str(self.conn.recv(1024), 'utf-8'))
         body_size = None
         buffer = b''
 
@@ -47,75 +47,73 @@ class ClientInstance:
                 start_idx = buffer.find(b'Start_Symbol')
                 id_idx = buffer.find(b'Id_Symbol')
                 size_idx = buffer.find(b'Size_Symbol')
-                end_idx = buffer.find(b'End_Symbol')
                 frame_idx = buffer.find(b'Frame_Num')
+                send_time_idx = buffer.find(b'Send_Time')
+                end_idx = buffer.find(b'End_Symbol')
 
-                msg_body = buffer[frame_idx+9:end_idx]
-                self.client_id = buffer[start_idx + 12: id_idx].decode(errors="ignore")
-                body_size = buffer[id_idx + 9:size_idx].decode(errors="ignore")
+                self.client_id = buffer[start_idx+12: id_idx].decode(errors="ignore")
+                body_size = buffer[id_idx+9:size_idx].decode(errors="ignore")
                 frame_num = int(buffer[size_idx+11:frame_idx].decode(errors="ignore"))
+                send_time = float(buffer[frame_idx+9:send_time_idx].decode(errors="ignore"))
+                msg_body = buffer[send_time_idx+9:end_idx]
 
                 if body_size.isdigit():
                     body_size = int(body_size)
 
                 if len(msg_body) == body_size:
-                    self._put_frame(body_size, frame_num, msg_body)
+                    self._put_frame(body_size, frame_num, send_time, msg_body)
                     buffer = buffer[end_idx+10:]
 
-    def _put_frame(self, body_size, frame_num, msg_body):
+    def _put_frame(self, body_size, frame_num, send_time, msg_body):
         self.put_count = self.put_count+1
-        #print(self.client_id, "queue_size : ", self.frame_queue.qsize())
         if body_size and len(msg_body) == body_size:
             image = numpy.load(BytesIO(msg_body))['frame']
-
-            # measure communication delay
-            if not self.communication_delay:
-                self.communication_delay = time.time() - self.conn_start_time
-                ##print("start_time : ", self.conn_start_time, ",current_time : ", time.time())
-                ##print(",communication : ", self.communication_delay)
             if self.frame_queue.qsize() < SERVER_QUEUE_SIZE:
-                self.frame_queue.put((image, time.time(), self.client_id, frame_num))
+                # measure communication delay
+                self.communication_end_time = time.time()
+                self.communication_delay_list.append(self.communication_end_time - send_time)
+                self.frame_queue.put((image, send_time, self.client_id, frame_num))
             else:
-                self.frame_drop_count+=1
+                self.frame_drop_count += 1
 
     def run_test(self):
         while self.frame_queue.empty():
             continue
 
+        self.computation_start_time = self.main_fps_start_time = time.time()
         while True:
-            frame, start_time, id, frame_num = self.frame_queue.get()
-            fps_start_time = time.time()
+            frame, send_time, client_id, frame_num = self.frame_queue.get()
             if frame is 0:
+                self.fps_end_time = self.computation_end_time = time.time()
                 self.return_procedure()
                 return
 
             self.run_count = self.run_count + 1
             self.MBNet.run(frame, frame_num)
 
-            time_taken = time.time() - fps_start_time
-            self.frame_times.append(time_taken)
-            re_frame_times = self.frame_times[-20:]
-            self.fps_list.append(len(re_frame_times) / sum(re_frame_times))
-
-            # measure computation delay
-            self.computational_delay_list.append(time.time() - start_time)
-            print(id,"'s", frame_num,"frame processing complete")
+            print(client_id, "'s", frame_num,"frame processing complete")
 
     def return_procedure(self):
-        time.sleep(1)
-        print("\nresult of", self.client_id)
-        print("communication delay: %.4f" % (self.communication_delay))
-        print("computational delay: %.4f" % (sum(self.computational_delay_list)/len(self.computational_delay_list)))
-        print("Avg FPS:", sum(self.fps_list) / len(self.fps_list) )
-        print("put_count:", self.put_count
-              , ", run_count:", self.run_count, ", frame_drop_count:", self.frame_drop_count)
+        avg_communication_delay = sum(self.communication_delay_list)/len(self.communication_delay_list)
+        avg_computation_delay = (self.computation_end_time-self.computation_start_time)/NUMBER_OF_TOTAL_FRAME
+        avg_main_fps = NUMBER_OF_TOTAL_FRAME/(self.fps_end_time - self.main_fps_start_time)
+        avg_client_fps = avg_main_fps - avg_communication_delay * avg_main_fps
+
+        print("\nResults of", self.client_id)
+        print("Average communication delay : %.3f" % avg_communication_delay)
+        print("Average computational delay : %.3f" % avg_computation_delay)
+        print("Average Main(model) FPS : %.3f" % avg_main_fps)
+        print("Average client FPS : %.3f" % avg_client_fps)
+        print("Put_into_frame_count :", self.put_count)
+        print("Run_count :", self.run_count)
+        print("Frame_drop :", self.frame_drop_count)
 
     def main_task(self):
         start_time = time.time()
         recv_thread = Thread(target=self.recv_data)
-        recv_thread.start()
         run_thread = Thread(target=self.run_test)
+        recv_thread.start()
         run_thread.start()
         recv_thread.join()
         run_thread.join()
-        print("Total runtime : ", time.time() - start_time)
+        print("Total runtime : %.3f" % (time.time() - start_time))

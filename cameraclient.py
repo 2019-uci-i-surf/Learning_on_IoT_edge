@@ -5,7 +5,8 @@ from settings import *
 import cv2
 import time
 from queue import Queue
-import math
+from threading import Thread
+
 
 class CameraClient:
     def __init__(self):
@@ -21,12 +22,11 @@ class CameraClient:
         self.socket.connect((host, port))
         print('successfully connected to server')
 
-    def put_frame(self, video_path):
-        vidcap = cv2.VideoCapture(video_path)
+    def put_frame(self):
+        vidcap = cv2.VideoCapture(VIDEO_PATH)
         count = 0
         msg = str(self.socket.recv(1024), 'utf-8') # receive data(broadcast or start) from server
         if msg == 'broadcast_start':
-            self.socket.sendall(bytes(str(time.time()), encoding='utf-8'))
             while True:
                 success, image = vidcap.read()
                 if not success:
@@ -37,7 +37,8 @@ class CameraClient:
                 bytes_io.seek(0)
                 bytes_image = bytes_io.read() # byte per 1frame
 
-                msg = ('Start_Symbol' + CLIENT_ID + 'Id_Symbol' + str(len(bytes_image)) + 'Size_Symbol' + str(count) + 'Frame_Num').encode() + bytes_image + ('End_Symbol').encode()
+                msg = ('Start_Symbol' + CLIENT_ID + 'Id_Symbol' + str(len(bytes_image)) + 'Size_Symbol' + str(count) + 'Frame_Num' + str(time.time()) + 'Send_Time').encode() + \
+                      bytes_image + ('End_Symbol').encode()
                 self.wait_send_queue.put(msg)
 
     def get_frame(self):
@@ -53,7 +54,6 @@ class CameraClient:
             if current_time > last_time + 1:
                 last_time = current_time
                 count = round(count + RATE_OF_SENDING_PART, 3)
-                print("count : ", count)
             if count >= 1:
                 self.send_frame()
                 count = round(count-1, 3)
@@ -79,5 +79,9 @@ class CameraClient:
     def mp_routine(host, port):
         cc = CameraClient()
         cc.connect_to_server(host=host, port=port)
-        cc.put_frame(video_path=VIDEO_PATH)
-        cc.get_frame()
+        th1 = Thread(target=cc.put_frame)
+        th2 = Thread(target=cc.get_frame)
+        th1.start()
+        th2.start()
+        th1.join()
+        th2.join()

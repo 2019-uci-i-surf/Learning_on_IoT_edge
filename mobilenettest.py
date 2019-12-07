@@ -39,16 +39,6 @@ class MobileNetTest(object):
         self.model.load_weights(weight_path)
         self.model._make_predict_function()
         self.bbox_util = BBoxUtility(self.num_classes)
-        #self.timer = Timer(1, self.timer_callback)
-        #self.current_time = 0
-        # self.current_fps = 0
-        #self.exec_time = None
-        #self.prev_extra_time = None
-        #self.extra_time = None
-        # self.fps_time_slot = list()
-        #self.is_finish = False
-        #self.fps_start = False
-        #self.fps_start_time = 0
 
         # Create unique and somewhat visually distinguishable bright
         # colors for the different classes.
@@ -70,7 +60,6 @@ class MobileNetTest(object):
         # Arguments
         conf_thresh: Threshold of confidence. Any boxes with lower confidence
                      are not visualized.
-
         """
         output_list = list()
         im_size = (self.input_shape[0], self.input_shape[1])
@@ -127,13 +116,6 @@ class MobileNetTest(object):
 
         cv2.imshow("SSD result", to_draw)
         cv2.waitKey(10)
-
-        #hit_detection = 0
-        #for i in DETECTION_LIST:
-        #    hit_detection += output_list.count(i)
-        #print(output_list)
-        #accuracy = (hit_detection / len(output_list))*100
-        #return accuracy
 
     def draw_fps(self, fps_time_slot):
         x_range = [index for index, value in enumerate(fps_time_slot)]
