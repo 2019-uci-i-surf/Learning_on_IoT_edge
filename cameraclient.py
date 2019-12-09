@@ -16,6 +16,7 @@ class CameraClient:
         self.wait_send_queue = Queue()
         self.number_of_sent_frame = 0
         self.start_send_time = 0
+        self.communication_delay = []
 
     def connect_to_server(self, host, port):
         print('try to connect to server..')
@@ -37,7 +38,7 @@ class CameraClient:
                 bytes_io.seek(0)
                 bytes_image = bytes_io.read() # byte per 1frame
 
-                msg = ('Start_Symbol' + CLIENT_ID + 'Id_Symbol' + str(len(bytes_image)) + 'Size_Symbol' + str(count) + 'Frame_Num' + str(time.time()) + 'Send_Time').encode() + \
+                msg = ('Start_Symbol' + CLIENT_ID + 'Id_Symbol' + str(len(bytes_image)) + 'Size_Symbol' + str(count) + 'Frame_Num').encode() + \
                       bytes_image + ('End_Symbol').encode()
                 self.wait_send_queue.put(msg)
 
@@ -65,11 +66,25 @@ class CameraClient:
     def send_frame(self):
         frame = self.wait_send_queue.get()
         self.socket.sendall(frame)
+        frame_send_time = time.time()
         self.number_of_sent_frame += 1
         print(CLIENT_ID, "sent frame : ", self.number_of_sent_frame)
+        # handshake
+        handshake = self.socket.recv(8)
+        while 1:
+            if int(handshake.decode()) == self.number_of_sent_frame:
+                self.communication_delay.append((time.time()-frame_send_time)/2)
+                break
+            else:
+                handshake = self.socket.recv(8)
 
     def result(self):
-        run_time = time.time()-self.start_send_time
+        run_time = time.time() - self.start_send_time
+
+        data = self.socket.recv(1024)
+        if data.decode() == 'Completed':
+            self.socket.sendall(str(sum(self.communication_delay)/NUMBER_OF_TOTAL_FRAME).encode())
+
         print("\nSending of", CLIENT_ID, "complete")
         print(self.number_of_sent_frame, "frames are sent.")
         print("run time : ", run_time)
