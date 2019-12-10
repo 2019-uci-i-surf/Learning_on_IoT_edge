@@ -87,9 +87,7 @@ class ClientInstance:
                 return
 
     def return_procedure(self):
-        self.conn.sendall(b'Completed')
         data = self.conn.recv(1024)
-        print(data.decode())
         self.communication_delay = data.decode()
 
         avg_communication_delay = float(self.communication_delay)

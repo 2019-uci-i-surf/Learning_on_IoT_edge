@@ -42,6 +42,7 @@ class CameraClient:
                       bytes_image + ('End_Symbol').encode()
                 self.wait_send_queue.put(msg)
 
+
     def get_frame(self):
         while self.wait_send_queue.empty():
             continue
@@ -79,12 +80,8 @@ class CameraClient:
                 handshake = self.socket.recv(8)
 
     def result(self):
+        self.socket.sendall(str(sum(self.communication_delay) / NUMBER_OF_TOTAL_FRAME).encode())
         run_time = time.time() - self.start_send_time
-
-        data = self.socket.recv(1024)
-        if data.decode() == 'Completed':
-            self.socket.sendall(str(sum(self.communication_delay)/NUMBER_OF_TOTAL_FRAME).encode())
-
         print("\nSending of", CLIENT_ID, "complete")
         print(self.number_of_sent_frame, "frames are sent.")
         print("run time : ", run_time)
