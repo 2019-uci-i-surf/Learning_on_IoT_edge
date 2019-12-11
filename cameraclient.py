@@ -43,6 +43,7 @@ class CameraClient:
                 self.wait_send_queue.put(msg)
 
 
+
     def get_frame(self):
         while self.wait_send_queue.empty():
             continue

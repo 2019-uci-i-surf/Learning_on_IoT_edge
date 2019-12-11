@@ -58,6 +58,8 @@ class ClientInstance:
                     buffer = buffer[end_idx+10:]
 
                 if frame_num == NUMBER_OF_TOTAL_FRAME:
+                    data = self.conn.recv(1024)
+                    self.communication_delay = data.decode(errors="ignore")
                     return
 
     def _put_frame(self, body_size, frame_num, msg_body):
@@ -72,7 +74,6 @@ class ClientInstance:
     def run_test(self):
         while self.frame_queue.empty():
             continue
-
         self.computation_start_time = self.main_fps_start_time = time.time()
         while True:
             frame, client_id, frame_num = self.frame_queue.get()
@@ -87,9 +88,6 @@ class ClientInstance:
                 return
 
     def return_procedure(self):
-        data = self.conn.recv(1024)
-        self.communication_delay = data.decode()
-
         avg_communication_delay = float(self.communication_delay)
         avg_computation_delay = (self.computation_end_time-self.computation_start_time)/NUMBER_OF_TOTAL_FRAME
         avg_main_fps = NUMBER_OF_TOTAL_FRAME/(self.fps_end_time - self.main_fps_start_time)
